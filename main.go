@@ -45,7 +45,7 @@ func GameLoop(Game *entities.Game, sync chan bool) {
 					OwnerId: player.Uid,
 					PosX:    player.PosX + float32(rand.Intn(5)) - float32(rand.Intn(10)),
 					PosY:    player.PosY + float32(rand.Intn(5)) - float32(rand.Intn(10)),
-					Size:    2,
+					Size:    10,
 					Speed:   100,
 
 					Damage: 0,
@@ -106,8 +106,8 @@ func Server(Game *entities.Game, sync chan bool) {
 			Uid:   "player" + id,
 			PosX:  0,
 			PosY:  0,
-			Size:  5,
-			Speed: 10,
+			Size:  25,
+			Speed: 100,
 
 			Health: 10,
 			Mana:   10,
