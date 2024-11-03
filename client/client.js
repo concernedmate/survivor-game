@@ -20,8 +20,6 @@ websocket_server.onmessage = (event) => {
         PLAYERS_DATA = data.players
         MOBS_DATA = data.mobs
         PROJECTILES_DATA = data.projectiles
-        // console.log("Player count: ", data.players.length)
-        // console.log(PLAYERS_DATA)
     }
     console.log("Ping: ", Date.now() - ping)
     ping = Date.now()
@@ -107,19 +105,19 @@ const render = () => {
     if (PLAYERS_DATA != null) {
         PLAYERS_DATA.map((player) => {
             ctx.fillStyle = "black"
-            drawObject(player.PosX, player.PosY, player.Size)
+            drawObject(player.PosX-player.Size/2, player.PosY-player.Size/2, player.Size)
         })
     }
     if (MOBS_DATA != null) {
         MOBS_DATA.map((mob) => {
             ctx.fillStyle = "red"
-            drawObject(mob.PosX, mob.PosY, mob.Size)
+            drawObject(mob.PosX-mob.Size/2, mob.PosY-mob.Size/2, mob.Size)
         })
     }
     if (PROJECTILES_DATA != null) {
         PROJECTILES_DATA.map((projectile) => {
             ctx.fillStyle = "green"
-            drawObject(projectile.PosX, projectile.PosY, projectile.Size)
+            drawObject(projectile.PosX-projectile.Size/2, projectile.PosY-projectile.Size/2, projectile.Size)
         })
     }
 
