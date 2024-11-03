@@ -20,7 +20,6 @@ const MAP_BOUNDARY_Y = 1000
 
 func GameLoop(Game *entities.Game, sync chan bool) {
 	startDelta := time.Now()
-	sync <- true
 
 	// TODO
 	for idx, player := range Game.Players {
@@ -49,7 +48,6 @@ func GameLoop(Game *entities.Game, sync chan bool) {
 			Game.Players[idx].WeaponCD -= int(time.Since(startDelta).Milliseconds()) + int(Game.DeltaTime*1000)
 		}
 	}
-	sync <- true
 
 	for idx := range Game.Projectiles {
 		if Game.Projectiles[idx].ProjMovement == nil {
@@ -216,7 +214,7 @@ func main() {
 		DeltaTime: 0.0,
 		Ticker:    *time.NewTicker(time.Millisecond * 500),
 	}
-	sync := make(chan bool, 1)
+	sync := make(chan bool)
 
 	// LOOP
 	go Server(&Game, sync)
