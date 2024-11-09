@@ -35,6 +35,8 @@ type Mob struct {
 
 	MobMovement    func(mob *Mob, deltaTime float32)
 	MobMovModifier int
+
+	DeleteFlag bool
 }
 
 type Projectile struct {
@@ -51,6 +53,8 @@ type Projectile struct {
 	Health       int
 	Lifetime     int
 	ProjMovement func(proj *Projectile, deltaTime float32)
+
+	DeleteFlag bool
 }
 
 type Obstacle struct {
@@ -69,18 +73,24 @@ type Game struct {
 	Ticker    time.Ticker
 }
 
-func (Game *Game) DestroyProjectile(idx int) {
-	if idx > len(Game.Projectiles)-1 || idx < 0 {
-		panic("DestroyProjectile: projectile index invalid!")
+func (Game *Game) DestroyProjectile() {
+	var newArr []Projectile
+	for _, proj := range Game.Projectiles {
+		if !proj.DeleteFlag {
+			newArr = append(newArr, proj)
+		}
 	}
-	Game.Projectiles = append(Game.Projectiles[:idx], Game.Projectiles[idx+1:]...)
+	Game.Projectiles = newArr
 }
 
-func (Game *Game) DestroyMob(idx int) {
-	if idx > len(Game.Mobs)-1 || idx < 0 {
-		panic("DestroyMob: mob index invalid!")
+func (Game *Game) DestroyMob() {
+	var newArr []Mob
+	for _, mob := range Game.Mobs {
+		if !mob.DeleteFlag {
+			newArr = append(newArr, mob)
+		}
 	}
-	Game.Mobs = append(Game.Mobs[:idx], Game.Mobs[idx+1:]...)
+	Game.Mobs = newArr
 }
 
 func (Game *Game) DestroyPlayer(uid string) {
@@ -118,8 +128,9 @@ func (Game *Game) CreateProjectileA(Player *Player) {
 		ProjMovement: func(proj *Projectile, deltaTime float32) {
 			proj.PosY -= float32(proj.Speed) * deltaTime
 		},
+		DeleteFlag: false,
 	})
-	Player.WeaponCD = 100
+	Player.WeaponCD = 50
 }
 
 func (Game *Game) CreateMobA() {
@@ -137,6 +148,7 @@ func (Game *Game) CreateMobA() {
 		MobMovement: func(mob *Mob, deltaTime float32) {
 			mob.PosY += float32(mob.Speed) * deltaTime
 		},
+		DeleteFlag: false,
 	}
 	Game.Mobs = append(Game.Mobs, newmob)
 }
@@ -162,6 +174,7 @@ func (Game *Game) CreateMobB() {
 				mob.MobMovModifier *= -1
 			}
 		},
+		DeleteFlag: false,
 	}
 	Game.Mobs = append(Game.Mobs, newmob)
 }
@@ -182,6 +195,7 @@ func (Game *Game) CreateMobC() {
 		MobMovement: func(mob *Mob, deltaTime float32) {
 			mob.PosY += float32(mob.Speed) * deltaTime
 		},
+		DeleteFlag: false,
 	}
 	newmob2 := Mob{
 		PosX:  startX,
@@ -202,6 +216,7 @@ func (Game *Game) CreateMobC() {
 				mob.MobMovModifier *= -1
 			}
 		},
+		DeleteFlag: false,
 	}
 	newmob3 := Mob{
 		PosX:  startX,
@@ -222,6 +237,7 @@ func (Game *Game) CreateMobC() {
 				mob.MobMovModifier *= -1
 			}
 		},
+		DeleteFlag: false,
 	}
 	Game.Mobs = append(Game.Mobs, newmob1)
 	Game.Mobs = append(Game.Mobs, newmob2)

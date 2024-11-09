@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"concernedmate/SurvivorGame/entities"
+	"concernedmate/SurvivorGame/physics"
 
 	"github.com/gorilla/websocket"
 )
@@ -21,7 +22,6 @@ const MAP_BOUNDARY_Y = 1000
 func GameLoop(Game *entities.Game, sync chan bool) {
 	startDelta := time.Now()
 
-	// TODO
 	for idx, player := range Game.Players {
 		/* [0, 0, 0, 0, 0] w a s d space */
 		if len(player.Events) == 0 {
@@ -64,32 +64,63 @@ func GameLoop(Game *entities.Game, sync chan bool) {
 	}
 
 	for i := 0; i < len(Game.Projectiles); i++ {
-		if i < 0 {
-			break
-		}
 		if Game.Projectiles[i].PosX < float32(-MAP_BOUNDARY_X) ||
 			Game.Projectiles[i].PosX > float32(MAP_BOUNDARY_X) ||
 			Game.Projectiles[i].PosY < float32(-MAP_BOUNDARY_Y) ||
 			Game.Projectiles[i].PosY > float32(MAP_BOUNDARY_Y) {
-			Game.DestroyProjectile(i)
-			fmt.Printf("Destroyed projectile: %d\n", i)
-			i--
+			Game.Projectiles[i].DeleteFlag = true
 		}
 	}
 
 	for i := 0; i < len(Game.Mobs); i++ {
-		if i < 0 {
-			break
-		}
 		if Game.Mobs[i].PosX < float32(-MAP_BOUNDARY_X) ||
 			Game.Mobs[i].PosX > float32(MAP_BOUNDARY_X) ||
 			Game.Mobs[i].PosY < float32(-MAP_BOUNDARY_Y) ||
 			Game.Mobs[i].PosY > float32(MAP_BOUNDARY_Y) {
-			Game.DestroyMob(i)
-			fmt.Printf("Destroyed mob: %d\n", i)
-			i--
+			Game.Mobs[i].DeleteFlag = true
 		}
 	}
+
+	// Projectile Mobs Collision
+	for i := 0; i < len(Game.Projectiles); i++ {
+		if Game.Projectiles[i].DeleteFlag {
+			continue
+		}
+		for j := 0; j < len(Game.Mobs); j++ {
+			if Game.Mobs[j].DeleteFlag {
+				continue
+			}
+			if physics.ProjectileMobCollision(&Game.Projectiles[i], &Game.Mobs[j]) {
+				Game.Projectiles[i].DeleteFlag = true
+				Game.Mobs[j].Health -= 1
+				if Game.Mobs[j].Health <= 0 {
+					Game.Mobs[j].DeleteFlag = true
+				}
+				break
+			}
+		}
+	}
+
+	// Player Mobs Collision
+	for i := 0; i < len(Game.Players); i++ {
+		for j := 0; j < len(Game.Mobs); j++ {
+			if Game.Mobs[j].DeleteFlag {
+				continue
+			}
+			if physics.PlayerMobCollision(&Game.Players[i], &Game.Mobs[j]) {
+				Game.Mobs[j].DeleteFlag = true
+				Game.Players[i].Health -= 1
+				if Game.Players[i].Health <= 0 {
+					Game.DestroyPlayer(Game.Players[i].Uid)
+				}
+				break
+			}
+		}
+	}
+
+	// Cleanup
+	Game.DestroyMob()
+	Game.DestroyProjectile()
 
 	// CALCULATE DELTATIME
 	if time.Since(startDelta).Milliseconds() == 0 {
@@ -174,20 +205,20 @@ func Server(Game *entities.Game, sync chan bool) {
 			dur := time.Since(timer).Milliseconds()
 			if dur > 10 {
 				var mobsData []map[string]any
-				for idx := range Game.Mobs {
+				for _, mob := range Game.Mobs {
 					mobsData = append(mobsData, map[string]any{
-						"PosX": Game.Mobs[idx].PosX,
-						"PosY": Game.Mobs[idx].PosY,
-						"Size": Game.Mobs[idx].Size,
+						"PosX": mob.PosX,
+						"PosY": mob.PosY,
+						"Size": mob.Size,
 					})
 				}
 
 				var projsData []map[string]any
-				for idx := range Game.Projectiles {
+				for _, proj := range Game.Projectiles {
 					projsData = append(projsData, map[string]any{
-						"PosX": Game.Projectiles[idx].PosX,
-						"PosY": Game.Projectiles[idx].PosY,
-						"Size": Game.Projectiles[idx].Size,
+						"PosX": proj.PosX,
+						"PosY": proj.PosY,
+						"Size": proj.Size,
 					})
 				}
 
