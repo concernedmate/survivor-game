@@ -130,7 +130,7 @@ func (Game *Game) CreateProjectileA(Player *Player) {
 		},
 		DeleteFlag: false,
 	})
-	Player.WeaponCD = 50
+	Player.WeaponCD = 150
 }
 
 func (Game *Game) CreateMobA() {

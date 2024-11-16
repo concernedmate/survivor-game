@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -126,7 +125,7 @@ func GameLoop(Game *entities.Game, sync chan bool) {
 	if time.Since(startDelta).Milliseconds() == 0 {
 		time.Sleep(time.Millisecond * 1)
 	}
-	fmt.Printf("Game processing for %d ms\n", time.Since(startDelta).Milliseconds())
+	// fmt.Printf("Game processing for %d ms\n", time.Since(startDelta).Milliseconds())
 	Game.DeltaTime = float32(time.Since(startDelta).Milliseconds()) / 1000
 	sync <- true
 }
@@ -203,30 +202,34 @@ func Server(Game *entities.Game, sync chan bool) {
 		for {
 			<-sync
 			dur := time.Since(timer).Milliseconds()
-			if dur > 10 {
-				var mobsData []map[string]any
+			if dur > 30 {
+				mobsData := make(map[int][]int)
 				for _, mob := range Game.Mobs {
-					mobsData = append(mobsData, map[string]any{
-						"PosX": mob.PosX,
-						"PosY": mob.PosY,
-						"Size": mob.Size,
-					})
+					mobsData[mob.Size] = append(mobsData[mob.Size], []int{int(mob.PosX), int(mob.PosY)}...)
 				}
 
-				var projsData []map[string]any
+				projsData := make(map[int][]int)
 				for _, proj := range Game.Projectiles {
-					projsData = append(projsData, map[string]any{
-						"PosX": proj.PosX,
-						"PosY": proj.PosY,
-						"Size": proj.Size,
+					projsData[proj.Size] = append(projsData[proj.Size], []int{int(proj.PosX), int(proj.PosY)}...)
+				}
+
+				var playersData []map[string]any
+				for _, player := range Game.Players {
+					playersData = append(playersData, map[string]any{
+						"Uid":    player.Uid,
+						"Health": player.Health,
+						"Mana":   player.Mana,
+						"Score":  player.Score,
+						"PosX":   int(player.PosX),
+						"PosY":   int(player.PosY),
+						"Size":   player.Size,
 					})
 				}
 
 				err := ws.WriteJSON(map[string]any{
 					"mobs":        mobsData,
 					"projectiles": projsData,
-					"players":     Game.Players,
-					"obstacles":   Game.Obstacles,
+					"players":     playersData,
 				})
 				if err != nil {
 					log.Println("errs:", err)
@@ -236,7 +239,7 @@ func Server(Game *entities.Game, sync chan bool) {
 			}
 		}
 	})
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
 
 func main() {
