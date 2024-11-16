@@ -12,6 +12,18 @@ let PLAYER_ID = null
 const websocket_client = new WebSocket("ws://" + document.location.host + "/ws_client")
 const websocket_server = new WebSocket("ws://" + document.location.host + "/ws_server")
 
+const typeSizes = {
+    "undefined": () => 0,
+    "boolean": () => 4,
+    "number": () => 8,
+    "string": item => 2 * item.length,
+    "object": item => !item ? 0 : Object
+        .keys(item)
+        .reduce((total, key) => sizeOf(key) + sizeOf(item[key]) + total, 0)
+};
+const sizeOf = value => typeSizes[typeof value](value);
+
+
 let ping = Date.now();
 websocket_server.onmessage = (event) => {
     let data = null
@@ -21,7 +33,9 @@ websocket_server.onmessage = (event) => {
         MOBS_DATA = data.mobs
         PROJECTILES_DATA = data.projectiles
     }
-    console.log("Ping: ", Date.now() - ping)
+    console.log("Received TOTAL data:", sizeOf(event.data), "bytes")
+
+    // console.log("Ping: ", Date.now() - ping)
     ping = Date.now()
 }
 websocket_client.onmessage = (event) => {
@@ -105,20 +119,32 @@ const render = () => {
     if (PLAYERS_DATA != null) {
         PLAYERS_DATA.map((player) => {
             ctx.fillStyle = "black"
-            drawObject(player.PosX-player.Size/2, player.PosY-player.Size/2, player.Size)
+            drawObject(player.PosX - player.Size / 2, player.PosY - player.Size / 2, player.Size)
         })
     }
     if (MOBS_DATA != null) {
-        MOBS_DATA.map((mob) => {
-            ctx.fillStyle = "red"
-            drawObject(mob.PosX-mob.Size/2, mob.PosY-mob.Size/2, mob.Size)
-        })
+        ctx.fillStyle = "red"
+        const keys = Object.keys(MOBS_DATA)
+        for (let i = 0; i < keys.length; i++) {
+            let Size = keys[i]
+            for (let j = 0; j < MOBS_DATA[Size].length; j+=2) {
+                let PosX = MOBS_DATA[Size][j]
+                let PosY = MOBS_DATA[Size][j+1]
+                drawObject(PosX - (Size / 2), PosY - (Size / 2), Size)
+            }
+        }
     }
     if (PROJECTILES_DATA != null) {
-        PROJECTILES_DATA.map((projectile) => {
-            ctx.fillStyle = "green"
-            drawObject(projectile.PosX-projectile.Size/2, projectile.PosY-projectile.Size/2, projectile.Size)
-        })
+        ctx.fillStyle = "green"
+        const keys = Object.keys(PROJECTILES_DATA)
+        for (let i = 0; i < keys.length; i++) {
+            let Size = keys[i]
+            for (let j = 0; j < PROJECTILES_DATA[Size].length; j+=2) {
+                let PosX = PROJECTILES_DATA[Size][j]
+                let PosY = PROJECTILES_DATA[Size][j+1]
+                drawObject(PosX - (Size / 2), PosY - (Size / 2), Size)
+            }
+        }
     }
 
     // start rendering
