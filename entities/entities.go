@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+const MAP_BOUNDARY_X = 1280
+const MAP_BOUNDARY_Y = 720
+
 type Player struct {
 	Uid    string
 	PosX   float32
@@ -104,8 +107,8 @@ func (Game *Game) DestroyPlayer(uid string) {
 func (Game *Game) CreatePlayer(id string) {
 	Game.Players = append(Game.Players, Player{
 		Uid:   id,
-		PosX:  float32(rand.Intn(250)) + float32(rand.Intn(250)),
-		PosY:  950,
+		PosX:  float32(rand.Intn(MAP_BOUNDARY_X/4)) + float32(rand.Intn(MAP_BOUNDARY_X/4)),
+		PosY:  MAP_BOUNDARY_Y - 50,
 		Size:  30,
 		Speed: 400,
 
@@ -135,9 +138,9 @@ func (Game *Game) CreateProjectileA(Player *Player) {
 
 func (Game *Game) CreateMobA() {
 	newmob := Mob{
-		PosX:  20 + float32(rand.Intn(950)),
+		PosX:  float32(rand.Intn(MAP_BOUNDARY_X)),
 		PosY:  10,
-		Size:  20,
+		Size:  35,
 		Speed: 300,
 
 		Health: 1,
@@ -154,11 +157,11 @@ func (Game *Game) CreateMobA() {
 }
 
 func (Game *Game) CreateMobB() {
-	startX := 225 + float32(rand.Intn(575))
+	startX := MAP_BOUNDARY_X/4 + float32(rand.Intn(MAP_BOUNDARY_X/2))
 	newmob := Mob{
 		PosX:  startX,
 		PosY:  10,
-		Size:  25,
+		Size:  40,
 		Speed: 400,
 
 		Health: 1,
@@ -180,11 +183,11 @@ func (Game *Game) CreateMobB() {
 }
 
 func (Game *Game) CreateMobC() {
-	startX := 125 + float32(rand.Intn(750))
+	startX := MAP_BOUNDARY_X/4 + float32(rand.Intn(MAP_BOUNDARY_X/4*3))
 	newmob1 := Mob{
 		PosX:  startX,
 		PosY:  10,
-		Size:  35,
+		Size:  50,
 		Speed: 500,
 
 		Health: 1,
@@ -200,7 +203,7 @@ func (Game *Game) CreateMobC() {
 	newmob2 := Mob{
 		PosX:  startX,
 		PosY:  10,
-		Size:  25,
+		Size:  40,
 		Speed: 500,
 
 		Health: 1,
@@ -221,7 +224,7 @@ func (Game *Game) CreateMobC() {
 	newmob3 := Mob{
 		PosX:  startX,
 		PosY:  10,
-		Size:  25,
+		Size:  40,
 		Speed: 500,
 
 		Health: 1,

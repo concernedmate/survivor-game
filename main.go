@@ -15,8 +15,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const MAP_BOUNDARY_X = 1000
-const MAP_BOUNDARY_Y = 1000
+const MAP_BOUNDARY_X = entities.MAP_BOUNDARY_X
+const MAP_BOUNDARY_Y = entities.MAP_BOUNDARY_Y
 
 func GameLoop(Game *entities.Game, sync chan bool) {
 	startDelta := time.Now()
@@ -203,17 +203,17 @@ func Server(Game *entities.Game, sync chan bool) {
 			<-sync
 			dur := time.Since(timer).Milliseconds()
 			if dur > 30 {
-				mobsData := make(map[int][]int)
+				mobsData := map[int][]int{}
 				for _, mob := range Game.Mobs {
 					mobsData[mob.Size] = append(mobsData[mob.Size], []int{int(mob.PosX), int(mob.PosY)}...)
 				}
 
-				projsData := make(map[int][]int)
+				projsData := map[int][]int{}
 				for _, proj := range Game.Projectiles {
 					projsData[proj.Size] = append(projsData[proj.Size], []int{int(proj.PosX), int(proj.PosY)}...)
 				}
 
-				var playersData []map[string]any
+				playersData := []map[string]any{}
 				for _, player := range Game.Players {
 					playersData = append(playersData, map[string]any{
 						"Uid":    player.Uid,
@@ -239,7 +239,7 @@ func Server(Game *entities.Game, sync chan bool) {
 			}
 		}
 	})
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	log.Fatal(http.ListenAndServe(":3000", nil))
 }
 
 func main() {

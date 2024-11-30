@@ -33,6 +33,7 @@ websocket_server.onmessage = (event) => {
         MOBS_DATA = data.mobs
         PROJECTILES_DATA = data.projectiles
     }
+    console.log(data.players)
     console.log("Received TOTAL data:", sizeOf(event.data), "bytes")
 
     // console.log("Ping: ", Date.now() - ping)
@@ -104,8 +105,8 @@ addEventListener("keyup", (event) => {
 const canvas = document.getElementById("canvas")
 const ctx = canvas.getContext("2d")
 
-canvas.width = 1000
-canvas.height = 1000
+canvas.width = 1280
+canvas.height = 720
 
 const drawObject = (x, y, size) => {
     ctx.fillRect(x, y, size, size)
@@ -116,9 +117,16 @@ const render = () => {
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     ctx.clearRect(5, 5, canvas.width - 10, canvas.height - 10)
 
+    let CurrPlayerData = null
+
     if (PLAYERS_DATA != null) {
         PLAYERS_DATA.map((player) => {
-            ctx.fillStyle = "black"
+            if (player.Uid == PLAYER_ID) {
+                CurrPlayerData = player
+                ctx.fillStyle = "grey"
+            } else {
+                ctx.fillStyle = "black"
+            }
             drawObject(player.PosX - player.Size / 2, player.PosY - player.Size / 2, player.Size)
         })
     }
@@ -127,9 +135,9 @@ const render = () => {
         const keys = Object.keys(MOBS_DATA)
         for (let i = 0; i < keys.length; i++) {
             let Size = keys[i]
-            for (let j = 0; j < MOBS_DATA[Size].length; j+=2) {
+            for (let j = 0; j < MOBS_DATA[Size].length; j += 2) {
                 let PosX = MOBS_DATA[Size][j]
-                let PosY = MOBS_DATA[Size][j+1]
+                let PosY = MOBS_DATA[Size][j + 1]
                 drawObject(PosX - (Size / 2), PosY - (Size / 2), Size)
             }
         }
@@ -139,12 +147,20 @@ const render = () => {
         const keys = Object.keys(PROJECTILES_DATA)
         for (let i = 0; i < keys.length; i++) {
             let Size = keys[i]
-            for (let j = 0; j < PROJECTILES_DATA[Size].length; j+=2) {
+            for (let j = 0; j < PROJECTILES_DATA[Size].length; j += 2) {
                 let PosX = PROJECTILES_DATA[Size][j]
-                let PosY = PROJECTILES_DATA[Size][j+1]
+                let PosY = PROJECTILES_DATA[Size][j + 1]
                 drawObject(PosX - (Size / 2), PosY - (Size / 2), Size)
             }
         }
+    }
+
+    if (CurrPlayerData != null){
+        ctx.fillStyle = "black"
+        ctx.font = "24px serif";
+        
+        ctx.fillText("Health:" + CurrPlayerData.Health, 10, 30);  
+        ctx.fillText("Score:" + CurrPlayerData.Score, 10, 60);   
     }
 
     // start rendering
