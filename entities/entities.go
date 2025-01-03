@@ -74,6 +74,8 @@ type Game struct {
 
 	DeltaTime float32
 	Ticker    time.Ticker
+
+	Sync chan bool
 }
 
 func (Game *Game) DestroyProjectile() {
