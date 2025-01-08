@@ -15,12 +15,31 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var Chan bool
-var Rooms map[string]*entities.Game
+var Chan chan bool
+var Rooms *map[string]*entities.Game
 
 func Server() {
 	var upgrader = websocket.Upgrader{}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			id_room := r.FormValue("id_room")
+			if id_room == "" {
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
+			rooms := *Rooms
+			if rooms[id_room] == nil {
+				go OpenRoom(id_room)
+			}
+			http.Redirect(w, r, fmt.Sprintf("/game?id_room=%s", id_room), http.StatusSeeOther)
+			return
+		}
+
+		if r.Method == "GET" {
+			http.ServeFile(w, r, "./engines/client/index.html")
+		}
+	})
+	http.HandleFunc("/game", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "./engines/client/client.html")
 	})
 	http.HandleFunc("/client.js", func(w http.ResponseWriter, r *http.Request) {
@@ -28,8 +47,14 @@ func Server() {
 	})
 
 	http.HandleFunc("/ws_client", func(w http.ResponseWriter, r *http.Request) {
-		id_room := r.Header.Get("id_room")
-		Game := Rooms[id_room]
+		id_room := r.URL.Query().Get("id_room")
+		rooms := *Rooms
+		if rooms == nil || id_room == "" || rooms[id_room] == nil {
+			fmt.Println("id_room:", id_room, "not found")
+			return
+		}
+
+		Game := rooms[id_room]
 
 		if len(Game.Players) > 3 {
 			w.Header().Set("Content-Type", "application/json")
@@ -70,8 +95,14 @@ func Server() {
 		}
 	})
 	http.HandleFunc("/ws_server", func(w http.ResponseWriter, r *http.Request) {
-		id_room := r.Header.Get("id_room")
-		Game := Rooms[id_room]
+		id_room := r.URL.Query().Get("id_room")
+		rooms := *Rooms
+		if rooms == nil || id_room == "" || rooms[id_room] == nil {
+			fmt.Println("id_room:", id_room, "not found")
+			return
+		}
+
+		Game := rooms[id_room]
 
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -121,15 +152,19 @@ func Server() {
 		}
 	})
 
-	fmt.Println("Server is started on port 3000")
-	log.Fatal(http.ListenAndServe(":3000", nil))
+	fmt.Println("Server is started on port 4000")
+	log.Fatal(http.ListenAndServe(":4000", nil))
 }
 
 func OpenRoom(id_room string) {
-	if Rooms == nil {
-		Rooms = make(map[string]*entities.Game)
+	rooms := *Rooms
+	if rooms == nil {
+		rooms_map := make(map[string]*entities.Game)
+		Rooms = &rooms_map
 	}
-	if Rooms[id_room] != nil {
+
+	rooms = *Rooms
+	if rooms[id_room] != nil {
 		return
 	}
 	// GAME
@@ -138,13 +173,15 @@ func OpenRoom(id_room string) {
 		Ticker:    *time.NewTicker(time.Millisecond * 500),
 		Sync:      make(chan bool),
 	}
-	Rooms[id_room] = &Game
+	rooms[id_room] = &Game
 
 	// LOOP
 	go GameSpawners(&Game)
 	for {
-		if len(Game.Players) > 0 {
-			GameLoop(&Game)
+		if len(Game.Players) <= 0 {
+			break
 		}
+		GameLoop(&Game)
 	}
+	rooms[id_room] = nil
 }

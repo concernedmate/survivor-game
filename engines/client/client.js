@@ -7,10 +7,12 @@ let OBSTACLES_DATA = null
 
 let PLAYER_ID = null
 
+let ID_ROOM = (new URLSearchParams(window.location.search)).get("id_room")
+
 /* =============================== CONNECTION =============================== */
 /* =============================== CONNECTION =============================== */
-const websocket_client = new WebSocket("ws://" + document.location.host + "/ws_client")
-const websocket_server = new WebSocket("ws://" + document.location.host + "/ws_server")
+const websocket_client = new WebSocket("ws://" + document.location.host + "/ws_client" + `?id_room=${ID_ROOM}`)
+const websocket_server = new WebSocket("ws://" + document.location.host + "/ws_server" + `?id_room=${ID_ROOM}`)
 
 const typeSizes = {
     "undefined": () => 0,

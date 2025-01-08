@@ -6,6 +6,5 @@ import (
 
 func main() {
 	// start server
-	go engines.OpenRoom("")
 	engines.Server()
 }
