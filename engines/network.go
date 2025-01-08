@@ -15,6 +15,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const APP_PORT = 3000
+
 var Rooms map[string]*entities.Game
 
 func initRooms() {
@@ -24,6 +26,25 @@ func initRooms() {
 
 func getRoom(id_room string) *entities.Game {
 	return Rooms[id_room]
+}
+
+func OpenRoom(id_room string) {
+	if Rooms[id_room] != nil {
+		return
+	}
+
+	// GAME
+	var Game = entities.Game{
+		DeltaTime: 0.0,
+		Ticker:    *time.NewTicker(time.Millisecond * 500),
+		Sync:      make(chan bool),
+	}
+
+	Rooms[id_room] = &Game
+
+	// LOOP
+	go GameSpawners(&Game)
+	go GameRoutine(&Game, id_room)
 }
 
 func Server() {
@@ -168,28 +189,6 @@ func Server() {
 		}
 	})
 
-	fmt.Println("Server is started on port 4000")
-	log.Fatal(http.ListenAndServe(":4000", nil))
-}
-
-func OpenRoom(id_room string) {
-	if Rooms[id_room] != nil {
-		return
-	}
-
-	// GAME
-	var Game = entities.Game{
-		DeltaTime: 0.0,
-		Ticker:    *time.NewTicker(time.Millisecond * 500),
-		Sync:      make(chan bool),
-	}
-	Rooms[id_room] = &Game
-
-	// LOOP
-	go GameSpawners(&Game)
-	for {
-		if len(Game.Players) > 0 {
-			GameLoop(&Game)
-		}
-	}
+	fmt.Printf("Server is started on port %d\n", APP_PORT)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", APP_PORT), nil))
 }

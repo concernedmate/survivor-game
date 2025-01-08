@@ -10,6 +10,21 @@ import (
 const MAP_BOUNDARY_X = entities.MAP_BOUNDARY_X
 const MAP_BOUNDARY_Y = entities.MAP_BOUNDARY_Y
 
+func GameRoutine(Game *entities.Game, id_room string) {
+	timer := time.Now()
+	for {
+		if len(Game.Players) > 0 {
+			GameLoop(Game)
+			timer = time.Now()
+		} else {
+			if time.Since(timer).Seconds() >= 3 {
+				delete(Rooms, id_room)
+				break
+			}
+		}
+	}
+}
+
 func GameLoop(Game *entities.Game) {
 	startDelta := time.Now()
 
@@ -124,7 +139,7 @@ func GameLoop(Game *entities.Game) {
 }
 
 func GameSpawners(Game *entities.Game) {
-	for {
+	for Game != nil {
 		t := <-Game.Ticker.C
 		if t.Second()%2 == 0 {
 			Game.CreateMobB()
