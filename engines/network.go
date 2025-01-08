@@ -15,10 +15,20 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var Chan chan bool
-var Rooms *map[string]*entities.Game
+var Rooms map[string]*entities.Game
+
+func initRooms() {
+	rooms_map := make(map[string]*entities.Game)
+	Rooms = rooms_map
+}
+
+func getRoom(id_room string) *entities.Game {
+	return Rooms[id_room]
+}
 
 func Server() {
+	initRooms()
+
 	var upgrader = websocket.Upgrader{}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
@@ -27,10 +37,16 @@ func Server() {
 				http.Redirect(w, r, "/", http.StatusSeeOther)
 				return
 			}
-			rooms := *Rooms
-			if rooms[id_room] == nil {
+
+			if getRoom(id_room) == nil {
 				go OpenRoom(id_room)
 			}
+
+			fmt.Printf("starting room %s ...\n", id_room)
+			for getRoom(id_room) == nil {
+			}
+			fmt.Printf("room %s started\n", id_room)
+
 			http.Redirect(w, r, fmt.Sprintf("/game?id_room=%s", id_room), http.StatusSeeOther)
 			return
 		}
@@ -48,13 +64,13 @@ func Server() {
 
 	http.HandleFunc("/ws_client", func(w http.ResponseWriter, r *http.Request) {
 		id_room := r.URL.Query().Get("id_room")
-		rooms := *Rooms
-		if rooms == nil || id_room == "" || rooms[id_room] == nil {
+		room := getRoom(id_room)
+		if room == nil {
 			fmt.Println("id_room:", id_room, "not found")
 			return
 		}
 
-		Game := rooms[id_room]
+		Game := room
 
 		if len(Game.Players) > 3 {
 			w.Header().Set("Content-Type", "application/json")
@@ -96,13 +112,13 @@ func Server() {
 	})
 	http.HandleFunc("/ws_server", func(w http.ResponseWriter, r *http.Request) {
 		id_room := r.URL.Query().Get("id_room")
-		rooms := *Rooms
-		if rooms == nil || id_room == "" || rooms[id_room] == nil {
+		room := getRoom(id_room)
+		if room == nil {
 			fmt.Println("id_room:", id_room, "not found")
 			return
 		}
 
-		Game := rooms[id_room]
+		Game := room
 
 		ws, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
@@ -157,31 +173,23 @@ func Server() {
 }
 
 func OpenRoom(id_room string) {
-	rooms := *Rooms
-	if rooms == nil {
-		rooms_map := make(map[string]*entities.Game)
-		Rooms = &rooms_map
-	}
-
-	rooms = *Rooms
-	if rooms[id_room] != nil {
+	if Rooms[id_room] != nil {
 		return
 	}
+
 	// GAME
 	var Game = entities.Game{
 		DeltaTime: 0.0,
 		Ticker:    *time.NewTicker(time.Millisecond * 500),
 		Sync:      make(chan bool),
 	}
-	rooms[id_room] = &Game
+	Rooms[id_room] = &Game
 
 	// LOOP
 	go GameSpawners(&Game)
 	for {
-		if len(Game.Players) <= 0 {
-			break
+		if len(Game.Players) > 0 {
+			GameLoop(&Game)
 		}
-		GameLoop(&Game)
 	}
-	rooms[id_room] = nil
 }

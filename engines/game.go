@@ -86,6 +86,7 @@ func GameLoop(Game *entities.Game) {
 				Game.Mobs[j].Health -= 1
 				if Game.Mobs[j].Health <= 0 {
 					Game.Mobs[j].DeleteFlag = true
+					Game.AddScorePlayer(Game.Projectiles[i].OwnerId, Game.Mobs[j].ScoreVal)
 				}
 				break
 			}

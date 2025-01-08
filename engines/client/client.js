@@ -35,9 +35,8 @@ websocket_server.onmessage = (event) => {
         MOBS_DATA = data.mobs
         PROJECTILES_DATA = data.projectiles
     }
-    console.log(data.players)
     console.log("Received TOTAL data:", sizeOf(event.data), "bytes")
-
+    
     // console.log("Ping: ", Date.now() - ping)
     ping = Date.now()
 }

@@ -24,10 +24,11 @@ type Player struct {
 }
 
 type Mob struct {
-	PosX  float32
-	PosY  float32
-	Size  int
-	Speed int
+	PosX     float32
+	PosY     float32
+	Size     int
+	Speed    int
+	ScoreVal int
 
 	Health int
 	Range  int
@@ -106,6 +107,15 @@ func (Game *Game) DestroyPlayer(uid string) {
 	}
 }
 
+func (Game *Game) AddScorePlayer(uid string, score int) {
+	for i, val := range Game.Players {
+		if val.Uid == uid {
+			Game.Players[i].Score += score
+			break
+		}
+	}
+}
+
 func (Game *Game) CreatePlayer(id string) {
 	Game.Players = append(Game.Players, Player{
 		Uid:   id,
@@ -140,10 +150,11 @@ func (Game *Game) CreateProjectileA(Player *Player) {
 
 func (Game *Game) CreateMobA() {
 	newmob := Mob{
-		PosX:  float32(rand.Intn(MAP_BOUNDARY_X)),
-		PosY:  10,
-		Size:  35,
-		Speed: 300,
+		PosX:     float32(rand.Intn(MAP_BOUNDARY_X)),
+		PosY:     10,
+		Size:     35,
+		Speed:    300,
+		ScoreVal: 1,
 
 		Health: 1,
 		Range:  0,
@@ -161,10 +172,11 @@ func (Game *Game) CreateMobA() {
 func (Game *Game) CreateMobB() {
 	startX := MAP_BOUNDARY_X/4 + float32(rand.Intn(MAP_BOUNDARY_X/2))
 	newmob := Mob{
-		PosX:  startX,
-		PosY:  10,
-		Size:  40,
-		Speed: 400,
+		PosX:     startX,
+		PosY:     10,
+		Size:     40,
+		Speed:    400,
+		ScoreVal: 2,
 
 		Health: 1,
 		Range:  0,
@@ -187,10 +199,11 @@ func (Game *Game) CreateMobB() {
 func (Game *Game) CreateMobC() {
 	startX := MAP_BOUNDARY_X/4 + float32(rand.Intn(MAP_BOUNDARY_X/4*3))
 	newmob1 := Mob{
-		PosX:  startX,
-		PosY:  10,
-		Size:  50,
-		Speed: 500,
+		PosX:     startX,
+		PosY:     10,
+		Size:     50,
+		Speed:    500,
+		ScoreVal: 5,
 
 		Health: 1,
 		Range:  0,
@@ -203,10 +216,11 @@ func (Game *Game) CreateMobC() {
 		DeleteFlag: false,
 	}
 	newmob2 := Mob{
-		PosX:  startX,
-		PosY:  10,
-		Size:  40,
-		Speed: 500,
+		PosX:     startX,
+		PosY:     10,
+		Size:     40,
+		Speed:    500,
+		ScoreVal: 1,
 
 		Health: 1,
 		Range:  0,
@@ -224,10 +238,11 @@ func (Game *Game) CreateMobC() {
 		DeleteFlag: false,
 	}
 	newmob3 := Mob{
-		PosX:  startX,
-		PosY:  10,
-		Size:  40,
-		Speed: 500,
+		PosX:     startX,
+		PosY:     10,
+		Size:     40,
+		Speed:    500,
+		ScoreVal: 1,
 
 		Health: 1,
 		Range:  0,
