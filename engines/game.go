@@ -23,6 +23,7 @@ func GameRoutine(Game *entities.Game, id_room string) {
 				delete(Rooms, id_room)
 				break
 			}
+			time.Sleep(time.Second) // sleep to not fuck up cpu utils
 		}
 	}
 }
