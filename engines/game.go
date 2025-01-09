@@ -20,7 +20,6 @@ func GameRoutine(Game *entities.Game, id_room string) {
 		} else {
 			if time.Since(timer).Seconds() >= 3 {
 				fmt.Printf("closing room %s\n", id_room)
-				close(Rooms[id_room].Sync)
 				delete(Rooms, id_room)
 				break
 			}
