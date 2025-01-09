@@ -152,51 +152,41 @@ func Server() {
 
 		timer := time.Now()
 		for {
-			var is_err error
-
-			select {
-			case <-Game.Sync:
-				dur := time.Since(timer).Milliseconds()
-				if dur > 50 {
-					mobsData := map[int][]int{}
-					for _, mob := range Game.Mobs {
-						mobsData[mob.Size] = append(mobsData[mob.Size], []int{int(mob.PosX), int(mob.PosY)}...)
-					}
-
-					projsData := map[string][]int{}
-					for _, proj := range Game.Projectiles {
-						sizex := fmt.Sprintf("%d|%d", proj.Size, int(proj.PosX))
-						projsData[sizex] = append(projsData[sizex], int(proj.PosY))
-					}
-
-					playersData := []any{}
-					for _, player := range Game.Players {
-						data := []any{
-							player.Uid, player.Score,
-							player.Health, player.Mana,
-							int(player.PosX), int(player.PosY),
-							player.Size,
-						}
-						playersData = append(playersData, data)
-					}
-
-					err := ws.WriteJSON(map[int]any{
-						0: mobsData,
-						1: projsData,
-						2: playersData,
-					})
-					if err != nil {
-						is_err = err
-						break
-					}
-					timer = time.Now()
+			<-Game.Sync
+			dur := time.Since(timer).Milliseconds()
+			if dur > 32 {
+				mobsData := map[int][]int{}
+				for _, mob := range Game.Mobs {
+					mobsData[mob.Size] = append(mobsData[mob.Size], []int{int(mob.PosX), int(mob.PosY)}...)
 				}
-			default:
-			}
 
-			if is_err != nil {
-				log.Println("errs:", is_err)
-				break
+				projsData := map[string][]int{}
+				for _, proj := range Game.Projectiles {
+					sizex := fmt.Sprintf("%d|%d", proj.Size, int(proj.PosX))
+					projsData[sizex] = append(projsData[sizex], int(proj.PosY))
+				}
+
+				playersData := []any{}
+				for _, player := range Game.Players {
+					data := []any{
+						player.Uid, player.Score,
+						player.Health, player.Mana,
+						int(player.PosX), int(player.PosY),
+						player.Size,
+					}
+					playersData = append(playersData, data)
+				}
+
+				err := ws.WriteJSON(map[int]any{
+					0: mobsData,
+					1: projsData,
+					2: playersData,
+				})
+				if err != nil {
+					log.Println("errs:", err)
+					break
+				}
+				timer = time.Now()
 			}
 		}
 	})
