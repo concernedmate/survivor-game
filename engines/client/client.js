@@ -31,12 +31,47 @@ websocket_server.onmessage = (event) => {
     let data = null
     try { data = JSON.parse(event.data) } catch (error) { console.log("Failure to parse JSON data!") }
     if (data != null) {
-        PLAYERS_DATA = data.players
-        MOBS_DATA = data.mobs
-        PROJECTILES_DATA = data.projectiles
+        const player_data = []
+        for (let i = 0; i < data[2].length; i++) {
+            player_data.push({
+                "Uid": data[2][i][0],
+                "Score": data[2][i][1],
+                "Health": data[2][i][2],
+                "Mana": data[2][i][3],
+                "PosX": data[2][i][4],
+                "PosY": data[2][i][5],
+                "Size": data[2][i][6],
+            })
+        }
+        PLAYERS_DATA = player_data
+
+        MOBS_DATA = data[0]
+
+        const proj_data = []
+        const proj_keys = Object.keys(data[1])
+        for (let i = 0; i < proj_keys.length; i++) {
+            const key = proj_keys[i]
+
+            const split = key.split("|") 
+            if (split.length > 1) { // when key is 'Size'|'PosX'
+                if (proj_data[split[0]] == null) {
+                    proj_data[split[0]] = []
+                }
+                data[1][key].map((val) => {
+                    proj_data[split[0]].push(parseInt(split[1]))
+                    proj_data[split[0]].push(val)
+                })
+            } else { // when key is 'Size'
+                proj_data[key] = data[1][key]
+            }
+        }
+        PROJECTILES_DATA = proj_data
     }
     console.log("Received TOTAL data:", sizeOf(event.data), "bytes")
-    
+    console.log("Received TOTAL mobs data:", sizeOf(data[0]), "bytes")
+    console.log("Received TOTAL proj data:", sizeOf(data[1]), "bytes")
+    console.log("Received TOTAL players data:", sizeOf(data[2]), "bytes")
+
     // console.log("Ping: ", Date.now() - ping)
     ping = Date.now()
 }
@@ -156,12 +191,12 @@ const render = () => {
         }
     }
 
-    if (CurrPlayerData != null){
+    if (CurrPlayerData != null) {
         ctx.fillStyle = "black"
         ctx.font = "24px serif";
-        
-        ctx.fillText("Health:" + CurrPlayerData.Health, 10, 30);  
-        ctx.fillText("Score:" + CurrPlayerData.Score, 10, 60);   
+
+        ctx.fillText("Health:" + CurrPlayerData.Health, 10, 30);
+        ctx.fillText("Score:" + CurrPlayerData.Score, 10, 60);
     }
 
     // start rendering

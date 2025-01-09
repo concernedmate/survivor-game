@@ -3,6 +3,7 @@ package engines
 import (
 	"concernedmate/SurvivorGame/entities"
 	"concernedmate/SurvivorGame/physics"
+	"fmt"
 	"log"
 	"time"
 )
@@ -18,6 +19,8 @@ func GameRoutine(Game *entities.Game, id_room string) {
 			timer = time.Now()
 		} else {
 			if time.Since(timer).Seconds() >= 3 {
+				fmt.Printf("closing room %s\n", id_room)
+				close(Rooms[id_room].Sync)
 				delete(Rooms, id_room)
 				break
 			}

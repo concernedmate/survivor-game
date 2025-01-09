@@ -60,13 +60,12 @@ func Server() {
 			}
 
 			if getRoom(id_room) == nil {
+				fmt.Printf("starting room %s ...\n", id_room)
 				go OpenRoom(id_room)
 			}
 
-			fmt.Printf("starting room %s ...\n", id_room)
 			for getRoom(id_room) == nil {
 			}
-			fmt.Printf("room %s started\n", id_room)
 
 			http.Redirect(w, r, fmt.Sprintf("/game?id_room=%s", id_room), http.StatusSeeOther)
 			return
@@ -126,7 +125,10 @@ func Server() {
 			for idx, players := range Game.Players {
 				if players.Uid == id {
 					Game.Players[idx].Events = strings.Split(playerEvent, ",")
-					Game.Sync <- true
+					select {
+					case Game.Sync <- true:
+					default:
+					}
 				}
 			}
 		}
@@ -147,44 +149,54 @@ func Server() {
 			return
 		}
 		defer ws.Close()
+
 		timer := time.Now()
 		for {
-			<-Game.Sync
-			dur := time.Since(timer).Milliseconds()
-			if dur > 30 {
-				mobsData := map[int][]int{}
-				for _, mob := range Game.Mobs {
-					mobsData[mob.Size] = append(mobsData[mob.Size], []int{int(mob.PosX), int(mob.PosY)}...)
-				}
+			var is_err error
 
-				projsData := map[int][]int{}
-				for _, proj := range Game.Projectiles {
-					projsData[proj.Size] = append(projsData[proj.Size], []int{int(proj.PosX), int(proj.PosY)}...)
-				}
+			select {
+			case <-Game.Sync:
+				dur := time.Since(timer).Milliseconds()
+				if dur > 50 {
+					mobsData := map[int][]int{}
+					for _, mob := range Game.Mobs {
+						mobsData[mob.Size] = append(mobsData[mob.Size], []int{int(mob.PosX), int(mob.PosY)}...)
+					}
 
-				playersData := []map[string]any{}
-				for _, player := range Game.Players {
-					playersData = append(playersData, map[string]any{
-						"Uid":    player.Uid,
-						"Health": player.Health,
-						"Mana":   player.Mana,
-						"Score":  player.Score,
-						"PosX":   int(player.PosX),
-						"PosY":   int(player.PosY),
-						"Size":   player.Size,
+					projsData := map[string][]int{}
+					for _, proj := range Game.Projectiles {
+						sizex := fmt.Sprintf("%d|%d", proj.Size, int(proj.PosX))
+						projsData[sizex] = append(projsData[sizex], int(proj.PosY))
+					}
+
+					playersData := []any{}
+					for _, player := range Game.Players {
+						data := []any{
+							player.Uid, player.Score,
+							player.Health, player.Mana,
+							int(player.PosX), int(player.PosY),
+							player.Size,
+						}
+						playersData = append(playersData, data)
+					}
+
+					err := ws.WriteJSON(map[int]any{
+						0: mobsData,
+						1: projsData,
+						2: playersData,
 					})
+					if err != nil {
+						is_err = err
+						break
+					}
+					timer = time.Now()
 				}
+			default:
+			}
 
-				err := ws.WriteJSON(map[string]any{
-					"mobs":        mobsData,
-					"projectiles": projsData,
-					"players":     playersData,
-				})
-				if err != nil {
-					log.Println("errs:", err)
-					break
-				}
-				timer = time.Now()
+			if is_err != nil {
+				log.Println("errs:", is_err)
+				break
 			}
 		}
 	})
