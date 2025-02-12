@@ -13,23 +13,28 @@ import (
 	"math/rand"
 
 	"github.com/gorilla/websocket"
+	"golang.org/x/sync/syncmap"
 )
 
 const APP_PORT = 3000
 
-var Rooms map[string]*entities.Game
-
-func initRooms() {
-	rooms_map := make(map[string]*entities.Game)
-	Rooms = rooms_map
-}
+var Rooms syncmap.Map
 
 func getRoom(id_room string) *entities.Game {
-	return Rooms[id_room]
+	data, _ := Rooms.Load(id_room)
+	room, ok := data.(*entities.Game)
+	if !ok {
+		return nil
+	}
+	return room
+}
+
+func deleteRoom(id_room string) {
+	Rooms.Delete(id_room)
 }
 
 func OpenRoom(id_room string) {
-	if Rooms[id_room] != nil {
+	if getRoom(id_room) != nil {
 		return
 	}
 
@@ -40,7 +45,7 @@ func OpenRoom(id_room string) {
 		Sync:      make(chan bool),
 	}
 
-	Rooms[id_room] = &Game
+	Rooms.Store(id_room, &Game)
 
 	// LOOP
 	go GameSpawners(&Game)
@@ -48,8 +53,6 @@ func OpenRoom(id_room string) {
 }
 
 func Server() {
-	initRooms()
-
 	var upgrader = websocket.Upgrader{}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
@@ -65,6 +68,7 @@ func Server() {
 			}
 
 			for getRoom(id_room) == nil {
+				// wait until room is started
 			}
 
 			http.Redirect(w, r, fmt.Sprintf("/game?id_room=%s", id_room), http.StatusSeeOther)
